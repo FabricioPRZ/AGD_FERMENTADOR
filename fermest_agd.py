@@ -12,7 +12,7 @@ initial_conditions = {
     "sugar": 100,
     "ph": 5.5,
     "temperature": 30,
-    "microorganism": "yeast",
+    "microorganism": "prueba",
     "microorganism_amount": 0.15
 }
 
@@ -30,7 +30,7 @@ def simulate(individual, initial_conditions):
     E0 = 0
     y0 = [X0, S0, E0]
 
-    # Ajustes por condiciones iniciales
+    # Factores del medio
     ph_factor = 1.0 - abs(initial_conditions["ph"] - 5.5) * 0.1
     micro_factor = initial_conditions["microorganism_amount"]
 
@@ -68,6 +68,39 @@ def simulate(individual, initial_conditions):
     }
 
 # ==============================
+# CONSUMO ENERGÉTICO (FÍSICO)
+# ==============================
+
+def energy_consumption(individual, time_vector):
+    rpm = individual["rpm"]
+    Q = individual["flow"]
+    T = individual["temperature"]
+
+    # Conversión
+    N = rpm / 60  # rev/s
+    T_amb = 25
+
+    # Constantes (ajustables)
+    k1 = 0.1   # agitador
+    k2 = 1.0   # bomba
+    k3 = 0.05  # térmico
+
+    # Potencias
+    P_agit = k1 * (N ** 3)
+    P_pump = k2 * Q
+    P_temp = k3 * abs(T - T_amb)
+
+    total_power = P_agit + P_pump + P_temp
+
+    # Tiempo total
+    time_total = time_vector[-1]
+
+    # Energía total
+    energy = total_power * time_total
+
+    return energy
+
+# ==============================
 # FUNCIÓN FITNESS
 # ==============================
 
@@ -78,17 +111,24 @@ def fitness(result, individual):
     if sugar_used <= 0:
         return 0
 
+    # ======================
+    # EFICIENCIA
+    # ======================
     theoretical = sugar_used * 0.5
     efficiency = ethanol / theoretical
 
-    # Penalización energética
-    energy_penalty = (
-        individual["rpm"] * 0.01 +
-        individual["flow"] * 0.05 +
-        individual["temperature"] * 0.01
-    )
+    # ======================
+    # ENERGÍA
+    # ======================
+    energy = energy_consumption(individual, result["time"])
 
-    return efficiency - energy_penalty
+    # Normalización (ajustable)
+    energy_norm = energy / 1000
+
+    # Peso de penalización
+    alpha = 0.3
+
+    return efficiency - alpha * energy_norm
 
 # ==============================
 # ALGORITMO GENÉTICO
@@ -174,8 +214,8 @@ def plot_results(best, history, initial_conditions):
     plt.plot(result["time"], result["biomass"], label="Biomasa")
     plt.plot(result["time"], result["substrate"], label="Sustrato")
     plt.plot(result["time"], result["ethanol"], label="Etanol")
-    plt.xlabel("Tiempo")
-    plt.ylabel("Concentración")
+    plt.xlabel("Tiempo (h)")
+    plt.ylabel("Concentración (g/L)")
     plt.title("Mejor individuo")
     plt.legend()
     plt.grid()
@@ -199,8 +239,8 @@ if __name__ == "__main__":
 
     print("\n===== MEJOR SOLUCIÓN =====")
     print(f"RPM: {best['rpm']:.2f}")
-    print(f"Temperatura: {best['temperature']:.2f}")
-    print(f"Caudal: {best['flow']:.2f}")
+    print(f"Temperatura: {best['temperature']:.2f} °C")
+    print(f"Caudal: {best['flow']:.2f} m^3/s")
     print(f"Fitness: {best['fitness']:.4f}")
 
     plot_results(best, history, initial_conditions)
