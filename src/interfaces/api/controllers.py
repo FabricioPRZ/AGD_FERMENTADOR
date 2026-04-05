@@ -1,3 +1,4 @@
+from application.use_cases.get_best_per_generation import GetBestPerGeneration
 from application.use_cases.run_experiment import RunExperiment
 from application.use_cases.get_experiment import GetExperiment
 from application.use_cases.get_simulation import GetSimulation
@@ -31,6 +32,12 @@ class ExperimentController:
         self.simulation_use_case = GetSimulation(
             simulation_repo=simulation_repo
         )
+        
+        self.best_per_gen_use_case = GetBestPerGeneration(
+            experiment_repo=experiment_repo,
+            generation_repo=generation_repo,
+            individual_repo=individual_repo
+        )
 
     def run(self, request):
         dto = ExperimentInputDTO(
@@ -57,3 +64,6 @@ class ExperimentController:
 
     def get_simulation(self, individual_id):
         return self.simulation_use_case.execute(individual_id)
+    
+    def get_best_per_generation(self, experiment_id):
+        return self.best_per_gen_use_case.execute(experiment_id)

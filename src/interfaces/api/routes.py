@@ -19,3 +19,7 @@ def get_experiment(experiment_id: str):
 @router.get("/simulation/{individual_id}")
 def get_simulation(individual_id: str):
     return controller.get_simulation(individual_id)
+
+@router.get("/experiment/{experiment_id}/best-per-generation")
+def get_best_per_generation(experiment_id: str):
+    return controller.get_best_per_generation(experiment_id)
