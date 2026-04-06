@@ -32,9 +32,9 @@ def simulate(individual, initial_conditions):
     t = np.linspace(0, 200, 200)
     sol = odeint(model, [X0, S0, E0], t)
 
-    biomass   = np.clip(sol[:, 0], 0, 1e6)
-    substrate = np.clip(sol[:, 1], 0, 1e6)
-    ethanol   = np.clip(sol[:, 2], 0, 1e6)
+    biomass   = np.clip(np.nan_to_num(sol[:, 0], nan=0.0, posinf=0.0, neginf=0.0), 0, 1e6)
+    substrate = np.clip(np.nan_to_num(sol[:, 1], nan=0.0, posinf=0.0, neginf=0.0), 0, 1e6)
+    ethanol   = np.clip(np.nan_to_num(sol[:, 2], nan=0.0, posinf=0.0, neginf=0.0), 0, 1e6)
 
     return {
         "time":      t,

@@ -3,11 +3,12 @@ import random
 from domain.entities.individual import Individual
 from domain.services.simulator import simulate
 from domain.services.fitness import compute_fitness
+from concurrent.futures import ThreadPoolExecutor
 
 
 class GeneticAlgorithm:
 
-    def __init__(self, pop_size=20, max_generations=50, patience=5, threshold=0.001):
+    def __init__(self, pop_size=20, max_generations=300, patience=5, threshold=0.001):
         self.pop_size = pop_size
         self.max_generations = max_generations
         self.patience = patience
@@ -21,13 +22,18 @@ class GeneticAlgorithm:
         )
 
     def evaluate(self, population, initial_conditions):
-        for ind in population:
+        def evaluate_individual(ind):
             result = simulate(ind, initial_conditions)
             ind.fitness = compute_fitness(result, ind)
             ind.ethanol = result["ethanol"][-1]
             ind.biomass = result["biomass"][-1]
             ind.substrate = result["substrate"][-1]
             ind.simulation_result = result
+
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(evaluate_individual, ind) for ind in population]
+            for future in futures:
+                future.result()
 
     def select(self, population):
         population.sort(key=lambda x: x.fitness, reverse=True)
@@ -51,7 +57,7 @@ class GeneticAlgorithm:
         ind.rpm = max(50, min(ind.rpm, 200))
         ind.temperature = max(20, min(ind.temperature, 40))
         ind.flow = max(1, min(ind.flow, 10))
-        
+
         return ind
 
     def has_converged(self, history):
