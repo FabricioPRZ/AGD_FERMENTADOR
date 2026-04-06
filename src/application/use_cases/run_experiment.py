@@ -1,6 +1,5 @@
 import uuid
 import random
-
 from domain.entities.experiment import Experiment
 from domain.entities.generation import Generation
 from domain.services.genetic_algorithm import GeneticAlgorithm
@@ -17,7 +16,6 @@ class RunExperiment:
 
     def execute(self, input_dto):
 
-        # 1. Crear y persistir experimento
         experiment = Experiment(
             id=str(uuid.uuid4()),
             ph=input_dto.ph,
@@ -28,7 +26,6 @@ class RunExperiment:
         )
         self.experiment_repo.save(experiment)
 
-        # 2. Condiciones iniciales para el simulador
         initial_conditions = {
             "biomass":              input_dto.micro_amount,
             "sugar":                input_dto.sugar,
@@ -38,13 +35,11 @@ class RunExperiment:
             "microorganism_amount": input_dto.micro_amount
         }
 
-        # 3. Inicializar algoritmo genético
         ga = GeneticAlgorithm()
         population = [ga.create_individual() for _ in range(ga.pop_size)]
         history = []
 
-        # 4. Evolución
-        for gen_number in range(ga.generations):
+        for gen_number in range(ga.max_generations):
             ga.evaluate(population, initial_conditions)
 
             best = max(population, key=lambda x: x.fitness)
@@ -61,6 +56,10 @@ class RunExperiment:
                 ind_id = self.individual_repo.save(ind, generation_id)
                 self.simulation_repo.save(ind_id, ind.simulation_result)
 
+            if ga.has_converged(history):
+                print(f"Convergió en generación {gen_number}")
+                break
+
             selected = ga.select(population)
             new_pop = []
             while len(new_pop) < ga.pop_size:
@@ -70,9 +69,7 @@ class RunExperiment:
                 new_pop.append(child)
             population = new_pop
 
-        # 5. Evaluar última generación y retornar mejor
         ga.evaluate(population, initial_conditions)
         best = max(population, key=lambda x: x.fitness)
 
-        # 6. Retornar con experiment_id incluido
         return ExperimentOutputDTO(experiment.id, best, history)

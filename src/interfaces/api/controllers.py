@@ -1,3 +1,5 @@
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from application.use_cases.get_best_per_generation import GetBestPerGeneration
 from application.use_cases.run_experiment import RunExperiment
 from application.use_cases.get_experiment import GetExperiment
@@ -8,6 +10,7 @@ from infrastructure.repositories.mysql_generation_repository import MySQLGenerat
 from infrastructure.repositories.mysql_individual_repository import MySQLIndividualRepository
 from infrastructure.repositories.mysql_simulation_repository import MySQLSimulationRepository
 
+executor = ThreadPoolExecutor()
 
 class ExperimentController:
 
@@ -32,14 +35,13 @@ class ExperimentController:
         self.simulation_use_case = GetSimulation(
             simulation_repo=simulation_repo
         )
-        
         self.best_per_gen_use_case = GetBestPerGeneration(
             experiment_repo=experiment_repo,
             generation_repo=generation_repo,
             individual_repo=individual_repo
         )
 
-    def run(self, request):
+    async def run(self, request):
         dto = ExperimentInputDTO(
             ph=request.ph,
             temperature=request.temperature,
@@ -47,7 +49,8 @@ class ExperimentController:
             microorganism=request.microorganism,
             micro_amount=request.micro_amount
         )
-        result = self.run_use_case.execute(dto)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(executor, self.run_use_case.execute, dto)
         return {
             "experiment_id": result.experiment_id,
             "best_individual": {
@@ -64,6 +67,6 @@ class ExperimentController:
 
     def get_simulation(self, individual_id):
         return self.simulation_use_case.execute(individual_id)
-    
+
     def get_best_per_generation(self, experiment_id):
         return self.best_per_gen_use_case.execute(experiment_id)

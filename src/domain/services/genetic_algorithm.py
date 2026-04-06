@@ -7,9 +7,11 @@ from domain.services.fitness import compute_fitness
 
 class GeneticAlgorithm:
 
-    def __init__(self, pop_size=20, generations=20):
+    def __init__(self, pop_size=20, max_generations=50, patience=5, threshold=0.001):
         self.pop_size = pop_size
-        self.generations = generations
+        self.max_generations = max_generations
+        self.patience = patience
+        self.threshold = threshold
 
     def create_individual(self):
         return Individual(
@@ -22,11 +24,9 @@ class GeneticAlgorithm:
         for ind in population:
             result = simulate(ind, initial_conditions)
             ind.fitness = compute_fitness(result, ind)
-
-            ind.ethanol   = result["ethanol"][-1]
-            ind.biomass   = result["biomass"][-1]
+            ind.ethanol = result["ethanol"][-1]
+            ind.biomass = result["biomass"][-1]
             ind.substrate = result["substrate"][-1]
-
             ind.simulation_result = result
 
     def select(self, population):
@@ -47,16 +47,31 @@ class GeneticAlgorithm:
             ind.temperature += random.uniform(-2, 2)
         if random.random() < 0.2:
             ind.flow += random.uniform(-1, 1)
+
+        ind.rpm = max(50, min(ind.rpm, 200))
+        ind.temperature = max(20, min(ind.temperature, 40))
+        ind.flow = max(1, min(ind.flow, 10))
+        
         return ind
+
+    def has_converged(self, history):
+        if len(history) < self.patience:
+            return False
+        recent = history[-self.patience:]
+        return max(recent) - min(recent) < self.threshold
 
     def run(self, initial_conditions):
         population = [self.create_individual() for _ in range(self.pop_size)]
         history = []
 
-        for gen in range(self.generations):
+        for gen in range(self.max_generations):
             self.evaluate(population, initial_conditions)
             best = max(population, key=lambda x: x.fitness)
             history.append(best.fitness)
+
+            if self.has_converged(history):
+                print(f"Convergió en generación {gen}")
+                break
 
             selected = self.select(population)
 
@@ -69,4 +84,5 @@ class GeneticAlgorithm:
 
             population = new_pop
 
+        self.evaluate(population, initial_conditions)
         return max(population, key=lambda x: x.fitness), history
