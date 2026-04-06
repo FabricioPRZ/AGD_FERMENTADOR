@@ -7,8 +7,8 @@ controller = ExperimentController()
 
 
 @router.post("/run-experiment")
-def run_experiment(request: ExperimentRequest):
-    return controller.run(request)
+async def run_experiment(request: ExperimentRequest):
+    return await controller.run(request)
 
 
 @router.get("/experiment/{experiment_id}")

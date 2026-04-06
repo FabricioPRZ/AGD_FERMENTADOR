@@ -1,6 +1,5 @@
 from .energy import compute_energy
 
-
 def compute_fitness(result, individual):
     ethanol = result["ethanol"][-1]
     substrate_initial = result["substrate"][0]
@@ -12,7 +11,7 @@ def compute_fitness(result, individual):
         return 0
 
     theoretical = sugar_used * 0.5
-    efficiency = ethanol / theoretical
+    efficiency = min(ethanol / theoretical, 1.0)
 
     time_total = result["time"][-1]
     energy = compute_energy(individual, time_total)
