@@ -5,7 +5,6 @@ from domain.entities.generation import Generation
 from domain.services.genetic_algorithm import GeneticAlgorithm
 from application.dto.experiment_output_dto import ExperimentOutputDTO
 
-
 class RunExperiment:
 
     def __init__(self, experiment_repo, generation_repo, individual_repo, simulation_repo):
@@ -37,13 +36,20 @@ class RunExperiment:
 
         ga = GeneticAlgorithm()
         population = [ga.create_individual() for _ in range(ga.pop_size)]
-        history = []
+        history       = []
+        history_worst = []
+        history_avg   = []
 
         for gen_number in range(ga.max_generations):
             ga.evaluate(population, initial_conditions)
 
-            best = max(population, key=lambda x: x.fitness)
+            best  = max(population, key=lambda x: x.fitness)
+            worst = min(population, key=lambda x: x.fitness)
+            avg   = sum(ind.fitness for ind in population) / len(population)
+
             history.append(best.fitness)
+            history_worst.append(worst.fitness)
+            history_avg.append(avg)
 
             generation = Generation(
                 id=None,
@@ -52,9 +58,14 @@ class RunExperiment:
             )
             generation_id = self.generation_repo.save(generation, best.fitness)
 
+            best_ind_id = None
             for ind in population:
                 ind_id = self.individual_repo.save(ind, generation_id)
-                self.simulation_repo.save(ind_id, ind.simulation_result)
+                if ind.fitness == best.fitness:
+                    best_ind_id = ind_id
+
+            if best_ind_id:
+                self.simulation_repo.save(best_ind_id, best.simulation_result)
 
             if ga.has_converged(history):
                 print(f"Convergió en generación {gen_number}")
@@ -72,4 +83,4 @@ class RunExperiment:
         ga.evaluate(population, initial_conditions)
         best = max(population, key=lambda x: x.fitness)
 
-        return ExperimentOutputDTO(experiment.id, best, history)
+        return ExperimentOutputDTO(experiment.id, best, history, history_worst, history_avg)

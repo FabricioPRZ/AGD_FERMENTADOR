@@ -59,7 +59,9 @@ class ExperimentController:
                 "flow":        result.best_individual.flow,
                 "fitness":     result.best_individual.fitness,
             },
-            "history": result.history
+            "history":       result.history,
+            "history_worst": result.history_worst,
+            "history_avg":   result.history_avg,
         }
 
     def get_experiment(self, experiment_id):
