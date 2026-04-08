@@ -29,7 +29,7 @@ def simulate(individual, initial_conditions):
         dEdt = k2 * X
         return [dXdt, dSdt, dEdt]
 
-    t = np.linspace(0, 200, 200)
+    t = np.linspace(0, 120, 200)
     sol = odeint(model, [X0, S0, E0], t)
 
     biomass   = np.clip(np.nan_to_num(sol[:, 0], nan=0.0, posinf=0.0, neginf=0.0), 0, 1e6)

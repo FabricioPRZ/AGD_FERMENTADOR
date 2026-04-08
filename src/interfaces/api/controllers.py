@@ -58,6 +58,10 @@ class ExperimentController:
                 "temperature": result.best_individual.temperature,
                 "flow":        result.best_individual.flow,
                 "fitness":     result.best_individual.fitness,
+                "ethanol":     result.best_individual.ethanol,
+                "biomass":     result.best_individual.biomass,
+                "efficiency":  result.best_individual.efficiency,
+                "energy":      result.best_individual.energy
             },
             "history":       result.history,
             "history_worst": result.history_worst,
