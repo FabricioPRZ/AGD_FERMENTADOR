@@ -17,11 +17,15 @@ class GetBestPerGeneration:
             if not individuals:
                 continue
 
-            best = max(individuals, key=lambda x: x.fitness)
+            best  = max(individuals, key=lambda x: x.fitness)
+            worst = min(individuals, key=lambda x: x.fitness)
+            avg   = sum(ind.fitness for ind in individuals) / len(individuals)
 
             result.append({
                 "generation":  gen.number,
                 "best_fitness": gen.best_fitness,
+                "worst_fitness": worst.fitness,
+                "avg_fitness":  avg,
                 "best_individual": {
                     "id":          best.id,
                     "rpm":         best.rpm,
